@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sample Report — Polaris Collab Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #c8f55a;
+    --accent2: #7b6cff;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --positive: #4ade80;
+    --negative: #f87171;
+    --neutral: #94a3b8;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.3;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .badge {
+    font-size: 10px;
+    background: rgba(200,245,90,0.1);
+    border: 1px solid rgba(200,245,90,0.25);
+    padding: 3px 10px;
+    border-radius: 20px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+  }
+
+  /* Sample banner */
+  .sample-banner {
+    background: rgba(123,108,255,0.08);
+    border: 1px solid rgba(123,108,255,0.25);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 11px;
+    color: var(--accent2);
+    margin-bottom: 36px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Video meta strip */
+  .video-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .video-thumb {
+    width: 96px;
+    height: 54px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 22px;
+  }
+
+  .video-info { flex: 1; }
+
+  .video-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.4px;
+    margin-bottom: 4px;
+  }
+
+  .video-sub {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+  }
+
+  .video-sub span { display: flex; align-items: center; gap: 4px; }
+
+  /* Score strip */
+  .score-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .score-card.c-accent::after { background: var(--accent); }
+  .score-card.c-positive::after { background: var(--positive); }
+  .score-card.c-neutral::after { background: var(--neutral); }
+  .score-card.c-accent2::after { background: var(--accent2); }
+
+  .score-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .score-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+
+  .score-value.v-accent { color: var(--accent); }
+  .score-value.v-positive { color: var(--positive); }
+  .score-value.v-neutral { color: var(--neutral); }
+  .score-value.v-accent2 { color: var(--accent2); }
+
+  .score-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.3px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .stag {
+    font-family: 'DM Mono', monospace;
+    font-weight: 400;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  /* Sentiment bars */
+  .sbar-wrap { margin-bottom: 14px; }
+  .sbar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .sbar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .sbar-fill { height: 100%; border-radius: 3px; }
+  .sf-pos { background: var(--positive); width: 72%; }
+  .sf-neu { background: var(--neutral); width: 21%; }
+  .sf-neg { background: var(--negative); width: 7%; }
+
+  /* Topics */
+  .topic-pill {
+    display: inline-block;
+    margin: 3px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+  }
+  .tp-covered { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2); color: var(--positive); }
+  .tp-missed  { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: var(--negative); }
+  .tp-audience { background: rgba(123,108,255,0.1); border: 1px solid rgba(123,108,255,0.3); color: var(--accent2); }
+
+  /* Verdict */
+  .verdict-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .verdict-text {
+    font-size: 13px;
+    line-height: 1.85;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  .meter {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 24px;
+  }
+
+  .m-block {
+    height: 4px;
+    flex: 1;
+    border-radius: 2px;
+  }
+
+  .m-lit { background: var(--accent); }
+  .m-off { background: var(--border); }
+
+  .sw-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .sw-head {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .sw-item {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .sw-item.strength { color: var(--positive); }
+  .sw-item.weakness { color: var(--negative); }
+
+  /* Highlights */
+  .highlight-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: start;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .highlight-card:last-child { border-bottom: none; padding-bottom: 0; }
+  .highlight-card:first-child { padding-top: 0; }
+
+  .hl-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--border);
+    min-width: 28px;
+    line-height: 1;
+  }
+
+  .hl-ts {
+    font-size: 10px;
+    color: var(--accent2);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .hl-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .hl-topic {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .sentiment-pill {
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+
+  .pill-positive { background: rgba(74,222,128,0.1); color: var(--positive); border: 1px solid rgba(74,222,128,0.2); }
+  .pill-negative { background: rgba(248,113,113,0.1); color: var(--negative); border: 1px solid rgba(248,113,113,0.2); }
+  .pill-neutral  { background: rgba(148,163,184,0.1); color: var(--neutral);  border: 1px solid rgba(148,163,184,0.2); }
+
+  @media (max-width: 640px) {
+    main { padding: 32px 20px 60px; }
+    header { padding: 16px 20px; }
+    .score-strip { grid-template-columns: repeat(2, 1fr); }
+    .sw-grid { grid-template-columns: 1fr; }
+    .video-meta { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    POLARIS × COLLAB INTEL
+  </div>
+  <div class="badge">Sample Report</div>
+</header>
+
+<main>
+
+  <div class="sample-banner">
+    ◎ &nbsp;This is a sample report showing what a typical analysis looks like. Paste a real YouTube URL in the analyzer to generate one for your actual collab videos.
+  </div>
+
+  <!-- Video meta -->
+  <div class="video-meta">
+    <div class="video-thumb">▶</div>
+    <div class="video-info">
+      <div class="video-title">"I Visited Polaris School of Technology — Honest Review (Campus Tour + CS Placement Stats)"</div>
+      <div class="video-sub">
+        <span>👤 TechWithRahul</span>
+        <span>⏱ 18:42</span>
+        <span style="color:var(--accent2)">youtube.com/watch?v=dQw4w9WgXcQ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score strip -->
+  <div class="score-strip">
+    <div class="score-card c-accent">
+      <div class="score-label">Content Quality</div>
+      <div class="score-value v-accent">78<span style="font-size:16px;letter-spacing:0">/100</span></div>
+      <div class="score-sub">high persuasion</div>
+    </div>
+    <div class="score-card c-positive">
+      <div class="score-label">Authenticity</div>
+      <div class="score-value v-positive">83<span style="font-size:16px;letter-spacing:0">/100</span></div>
+      <div class="score-sub">creator credibility</div>
+    </div>
+    <div class="score-card c-neutral">
+      <div class="score-label">Polaris Mentions</div>
+      <div class="score-value v-neutral">14</div>
+      <div class="score-sub">school/program refs</div>
+    </div>
+    <div class="score-card c-accent2">
+      <div class="score-label">Audience Tone</div>
+      <div class="score-value v-accent2" style="font-size:18px;letter-spacing:-0.5px;padding-top:6px">Positive</div>
+      <div class="score-sub">honest review format</div>
+    </div>
+  </div>
+
+  <!-- Sentiment -->
+  <div class="section" style="margin-bottom:20px">
+    <div class="section-title">Sentiment Breakdown <span class="stag">full video</span></div>
+    <div class="sbar-wrap">
+      <div class="sbar-label"><span>Positive</span><span>72%</span></div>
+      <div class="sbar"><div class="sbar-fill sf-pos"></div></div>
+    </div>
+    <div class="sbar-wrap">
+      <div class="sbar-label"><span>Neutral</span><span>21%</span></div>
+      <div class="sbar"><div class="sbar-fill sf-neu"></div></div>
+    </div>
+    <div class="sbar-wrap" style="margin-bottom:0">
+      <div class="sbar-label"><span>Negative</span><span>7%</span></div>
+      <div class="sbar"><div class="sbar-fill sf-neg"></div></div>
+    </div>
+  </div>
+
+  <!-- Admissions topics -->
+  <div class="section" style="margin-bottom:20px">
+    <div class="section-title">Admissions Topics <span class="stag">coverage map</span></div>
+    <div style="margin-bottom:14px">
+      <span class="topic-pill tp-audience">Speaks to: Students &amp; Parents</span>
+    </div>
+    <div style="margin-bottom:12px">
+      <span class="topic-pill tp-covered">✓ placement stats</span>
+      <span class="topic-pill tp-covered">✓ campus life</span>
+      <span class="topic-pill tp-covered">✓ curriculum overview</span>
+      <span class="topic-pill tp-covered">✓ tech infrastructure</span>
+      <span class="topic-pill tp-covered">✓ student testimonial</span>
+      <span class="topic-pill tp-covered">✓ hostel &amp; facilities</span>
+    </div>
+    <div>
+      <span class="topic-pill tp-missed">✗ fees &amp; ROI breakdown</span>
+      <span class="topic-pill tp-missed">✗ admission process / cutoffs</span>
+      <span class="topic-pill tp-missed">✗ faculty credentials</span>
+    </div>
+  </div>
+
+  <!-- Verdict -->
+  <div class="section verdict-section" style="margin-bottom:20px">
+    <div class="section-title">Admissions Content Verdict <span class="stag">AI assessment</span></div>
+    <p class="verdict-text">
+      This video performs strongly as top-of-funnel admissions content — TechWithRahul's campus walk-through format feels genuine and his placement data callouts (avg. ₹12L CTC, 3 students at Google) are likely to resonate deeply with both students and parents making a high-stakes decision. The emotional arc from "skeptical visitor" to "genuinely impressed" mirrors a prospective student's own journey, making it highly persuasive. However, the complete absence of fee structure discussion is a significant gap — parents watching are almost certainly wondering about ROI, and leaving that unanswered may cause drop-off before they reach out to admissions. For the next brief, push the creator to dedicate 90 seconds to the fees-vs-placement narrative, ideally with a simple on-screen graphic.
+    </p>
+    <div class="meter">
+      <div class="m-block m-lit"></div><div class="m-block m-lit"></div><div class="m-block m-lit"></div>
+      <div class="m-block m-lit"></div><div class="m-block m-lit"></div><div class="m-block m-lit"></div>
+      <div class="m-block m-lit"></div><div class="m-block m-lit"></div>
+      <div class="m-block m-off"></div><div class="m-block m-off"></div>
+    </div>
+    <div class="sw-grid">
+      <div>
+        <div class="sw-head">Strengths</div>
+        <div class="sw-item strength">✓ Authentic "honest review" framing builds trust fast</div>
+        <div class="sw-item strength">✓ Placement stats quoted with specific numbers, not vague claims</div>
+        <div class="sw-item strength">✓ Campus B-roll makes the environment tangible for remote viewers</div>
+      </div>
+      <div>
+        <div class="sw-head">Weaknesses</div>
+        <div class="sw-item weakness">✗ No mention of tuition fees or scholarship options</div>
+        <div class="sw-item weakness">✗ Admission process & eligibility criteria never addressed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Highlights -->
+  <div class="section">
+    <div class="section-title">Top Highlights <span class="stag">key moments</span></div>
+
+    <div class="highlight-card">
+      <div class="hl-num">01</div>
+      <div>
+        <div class="hl-ts">⏱ 02:14</div>
+        <div class="hl-text">Rahul opens with a candid admission that he was skeptical about private tech schools before visiting — this immediately disarms defensive viewers who share the same bias. It sets up a credible "converted skeptic" narrative that makes subsequent praise far more believable.</div>
+        <div class="hl-topic">student testimonial</div>
+      </div>
+      <div class="sentiment-pill pill-positive">Positive</div>
+    </div>
+
+    <div class="highlight-card">
+      <div class="hl-num">02</div>
+      <div>
+        <div class="hl-ts">⏱ 06:38</div>
+        <div class="hl-text">A detailed walkthrough of the CS lab infrastructure — 200-seat coding arena, AWS & Azure cloud credits for students, and a dedicated ML research cluster — is shown on screen with clear labelling. For a parent evaluating tech readiness, this segment is a strong trust signal and differentiator.</div>
+        <div class="hl-topic">tech infrastructure</div>
+      </div>
+      <div class="sentiment-pill pill-positive">Positive</div>
+    </div>
+
+    <div class="highlight-card">
+      <div class="hl-num">03</div>
+      <div>
+        <div class="hl-ts">⏱ 10:55</div>
+        <div class="hl-text">Placement statistics are presented with a simple on-screen graphic: 94% placement rate, average package ₹12.4L, highest ₹38L. Rahul interviews a final-year student who mentions getting a Google SWE offer. This is the single most persuasive minute in the video for a results-driven audience.</div>
+        <div class="hl-topic">placement stats</div>
+      </div>
+      <div class="sentiment-pill pill-positive">Positive</div>
+    </div>
+
+    <div class="highlight-card">
+      <div class="hl-num">04</div>
+      <div>
+        <div class="hl-ts">⏱ 14:20</div>
+        <div class="hl-text">Rahul briefly mentions the application deadline but doesn't explain eligibility criteria or the selection process — he moves on quickly. This is a missed moment where a parent watching would have paused and wanted specifics. The vague CTA ("check the link below") is weak and likely loses conversions here.</div>
+        <div class="hl-topic">admission process</div>
+      </div>
+      <div class="sentiment-pill pill-neutral">Neutral</div>
+    </div>
+
+    <div class="highlight-card">
+      <div class="hl-num">05</div>
+      <div>
+        <div class="hl-ts">⏱ 17:08</div>
+        <div class="hl-text">The closing segment features Rahul giving a direct recommendation — "if I were appearing for JEE again, Polaris CS would be my top private college choice." This kind of personal, first-person endorsement is highly effective as a final conversion nudge, especially for students still weighing options.</div>
+        <div class="hl-topic">career outcomes</div>
+      </div>
+      <div class="sentiment-pill pill-positive">Positive</div>
+    </div>
+
+  </div>
+
+</main>
+
+</body>
+</html>
